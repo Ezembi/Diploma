@@ -1,0 +1,11 @@
+Scanning dependencies of target service
+[ 33%] Building CXX object CMakeFiles/service.dir/service.cpp.o
+[ 66%] Building CXX object CMakeFiles/service.dir/usr/local/includeos/src/service_name.cpp.o
+[100%] Linking CXX executable IncludeOS_example
+[100%] Built target service
+Scanning dependencies of target pruned_elf_symbols
+/usr/bin/objcopy: st4vsfEd: section .bss lma 0x21d000 adjusted to 0x26969a
+/usr/bin/strip: st6k3zH4: section .bss lma 0x21d000 adjusted to 0x26969a
+[100%] Built target pruned_elf_symbols
+Scanning dependencies of target prepend_bootloader
+[100%] Built target prepend_bootloader
