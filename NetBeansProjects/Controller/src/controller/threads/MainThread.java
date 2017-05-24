@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import model.data.Response;
 import model.data.VMCommand;
 import model.data.VirtualMachine;
@@ -85,11 +86,16 @@ public class MainThread implements Runnable {
         @Override
         public void setData(String data) {
             if (data.equals(VMCommand.COMMAND + ": " + VMCommand.KILL)) {
-                Logger.i(TAG, "Stop the servise");
-                if (killProces(pid) == 0) {
-                    Logger.i(TAG, "VM kill success");
-                } else {
-                    Logger.i(TAG, "Error on VM kill");
+                try {
+                    Logger.i(TAG, "Stop the servise");
+                    Thread.sleep(1000);
+                    if (killProces(pid) == 0) {
+                        Logger.i(TAG, "VM kill success");
+                    } else {
+                        Logger.i(TAG, "Error on VM kill");
+                    }
+                } catch (InterruptedException ex) {
+                    java.util.logging.Logger.getLogger(MainThread.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (data.contains(VMCommand.COMMAND + ": " + VMCommand.START)) {
                 String[] cmd = data.split("!");

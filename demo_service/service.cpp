@@ -34,28 +34,36 @@ uint64_t new_total_ = 0;
 uint64_t serialized_halt_ = 0;
 uint64_t serialized_total_ = 0;
 
-std::string HTML_RESPONSE() {
-    /* HTML */
-    std::stringstream stream;
-    stream << "{\"d\":\"Servise cant parse you request :(\"}";
-
-    return stream.str();
-}
-
-std::string HTML_RESPONSE(const std::string& s) {
-
+std::string calc_a_count(const std::string& s) {
+    int sp = s.find("/?data=") + 7;
+    int fp = s.find(" HTTP");
     int a_count = 0;
-    for (int i = 0; i < s.length(); i++) {
+    for (int i = sp; i < s.length() && i < fp; i++) {
         if (s[i] == 'a') {
             a_count++;
         }
     }
 
-    /* HTML */
     std::stringstream stream;
     stream << "{\"d\":\"a = " + std::to_string(a_count) + "\"}";
 
     return stream.str();
+}
+
+http::Response handle_request(const std::string& s) {
+    http::Response res;
+
+    auto& header = res.header();
+
+    header.set_field(http::header::Server, "IncludeOS/0.10");
+
+    res.add_body(calc_a_count(s));
+    header.set_field(http::header::Content_Type, "text/html; charset=UTF-8");
+    header.set_field(http::header::Content_Length, std::to_string(res.body().to_string().size()));
+
+    header.set_field(http::header::Connection, "close");
+
+    return res;
 }
 
 double getActive() {
@@ -84,7 +92,7 @@ void ping() {
     printf("\nGo ping server:");
 
     int proc = (getActive() * 100.0) / ((OS::cpu_freq().count() * 1000) * 1000);
-    
+
     if (proc < 100) {
         printf("%d:", proc);
     } else {
@@ -92,51 +100,6 @@ void ping() {
     }
 
     printf("%d\n", OS::heap_usage());
-
-    
-    
-}
-
-http::Response handle_request(const http::Request& req) {
-    printf("<Service> Request:\n%s\n", req.to_string().c_str());
-
-    http::Response res;
-
-    auto& header = res.header();
-
-    header.set_field(http::header::Server, "IncludeOS/0.10");
-
-    res.add_body(HTML_RESPONSE(req.uri().str()));
-    header.set_field(http::header::Content_Type, "text/html; charset=UTF-8");
-    header.set_field(http::header::Content_Length, std::to_string(res.body().to_string().size()));
-
-    header.set_field(http::header::Connection, "close");
-
-    return res;
-}
-
-http::Response handle_request() {
-    http::Response res;
-
-    auto& header = res.header();
-
-    header.set_field(http::header::Server, "IncludeOS/0.10");
-
-    // GET /
-    //res.set_status_code(http::Bad_Request);
-    res.add_body(HTML_RESPONSE());
-    // set Content type and length
-    header.set_field(http::header::Content_Type, "text/html; charset=UTF-8");
-    header.set_field(http::header::Content_Length, std::to_string(res.body().to_string().size()));
-    res.set_status_code(http::Bad_Request);
-
-    header.set_field(http::header::Connection, "close");
-
-    return res;
-}
-
-void Service::stop() {
-    printf("\n\nService::stop\n\n");
 }
 
 void Service::start(const std::string& s) {
@@ -178,29 +141,14 @@ void Service::start(const std::string& s) {
                 conn->on_read(1024,
                         [conn] (auto buf, size_t n) {
                             printf("<Service> @on_read: %u bytes received.\n", n);
-                            try {
-                                // try to parse the request
-                                http::Request req{(const char*) buf.get(), n};
+                            printf("\nbuf: %s\n", buf.get());
+                            auto res = handle_request(std::string(reinterpret_cast<char*> (buf.get())));
+                            printf("<Service> Responding with %u %s.\n",
+                                    res.status_code(), http::code_description(res.status_code()).to_string().c_str());
 
-                                // handle the request, getting a matching response
-                                auto res = handle_request(req);
-
-                                printf("<Service> Responding with %u %s.\n",
-                                res.status_code(), http::code_description(res.status_code()).to_string().c_str());
-
-                                conn->write(res, [](size_t written) {
-                                    printf("<Service> @on_write: %u bytes written.\n", written);
-                                });
-                            } catch (const std::exception& e) {
-                                printf("<Service> Unable to parse request.\n %s\n\n > ", e.what());
-                                auto res = handle_request();
-                                printf("<Service> Responding with %u %s.\n",
-                                res.status_code(), http::code_description(res.status_code()).to_string().c_str());
-
-                                conn->write(res, [](size_t written) {
-                                    printf("<Service> @on_write: %u bytes written.\n", written);
-                                });
-                            }
+                            conn->write(res, [](size_t written) {
+                                printf("<Service> @on_write: %u bytes written.\n", written);
+                            });
                         });
             });
 
