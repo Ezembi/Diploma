@@ -142,6 +142,7 @@ public class ServerServlet extends HttpServlet {
             vm = db.getFistFreeVM();
             if (vm != null) {
                 //если есть свободна VM
+                db.resetVMfreeCount(vm.getId());
                 sh.process(sh.getProcessedData(HttpRequestHelper.sendingRequest(vm.getIp(), data)));
             } else {
                 vm = getMinVM(db.getVMSnapshot());
@@ -150,6 +151,7 @@ public class ServerServlet extends HttpServlet {
                     throw new NoFreeVMException("There are no running virtual machines");
                 }
 
+                db.resetVMfreeCount(vm.getId());
                 sh.process(sh.getProcessedData(HttpRequestHelper.sendingRequest(vm.getIp(), data)));
             }
         }
@@ -196,8 +198,8 @@ public class ServerServlet extends HttpServlet {
             if (freeCount > maxFreeCount) {
                 log.info("Try to kill VM: " + vmStr);
                 try {
-                    HttpRequestHelper.sendingStartKillRequest(vm.getIp(), VMCommand.KILL);
                     db.deleteVM(vm);
+                    HttpRequestHelper.sendingStartKillRequest(vm.getIp(), VMCommand.KILL);
                     log.info("VM: " + vmStr + " killing successfully");
                 } catch (IOException ex) {
                     log.error("Kill VM error: " + ex, ex);

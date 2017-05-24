@@ -439,6 +439,28 @@ public class DBManager {
         }
     }
     
+    /**
+     * обновить инфу о VM
+     * @param vm
+     * @param id_vm
+     * @return 
+     */
+    public void resetVMfreeCount(int id_vm) throws SQLException{
+        log.info("Update vm with id_vmachine = " + id_vm + " and reset freeCount");
+        PreparedStatement stmt = null;
+        try {
+            stmt = conn.prepareStatement(
+                    "UPDATE \"VMserver\".vmachine   \n"
+                    + "SET                          \n"
+                        + "free_count=0             \n"
+                    + " WHERE id_vmachine=" + id_vm);
+
+            stmt.execute();
+        } finally {
+            DbUtils.closeQuietly(stmt);
+        }
+    }
+    
     private int getFreeCount(int id_vm) throws SQLException{
         PreparedStatement pstmt = null;
         ResultSet rs = null;
