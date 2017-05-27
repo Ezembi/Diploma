@@ -64,8 +64,6 @@ public class Job<T,M> {
     public void setState(int state) {
         this.state = state;
     }
-    
-    
 
     @Override
     public String toString() {
