@@ -17,6 +17,7 @@
 
 #include <cmath> // rand()
 #include <sstream>
+#include <string>
 
 #include <os>
 #include <net/inet4>
@@ -34,18 +35,28 @@ uint64_t new_total_ = 0;
 uint64_t serialized_halt_ = 0;
 uint64_t serialized_total_ = 0;
 
-std::string calc_a_count(const std::string& s) {
-    int sp = s.find("/?data=") + 7;
+std::string service_handler(const std::string& s) {
+    int sp = s.find("/?data=") + 6;
     int fp = s.find(" HTTP");
-    int a_count = 0;
-    for (int i = sp; i < s.length() && i < fp; i++) {
-        if (s[i] == 'a') {
-            a_count++;
+    
+    std::string number = s.substr(sp,fp - sp);
+    long myLong = std::stol( number );
+    
+    int count = 0;
+    for (long i = 0; i <= myLong; i++) {
+        int divCount = 0;
+        for (long j = 1; j <= i; j++) {
+            if(i%j == 0){
+                divCount++;
+            }
+        }
+        if(divCount == 2){
+            count++;
         }
     }
-
+    
     std::stringstream stream;
-    stream << "{\"d\":\"a = " + std::to_string(a_count) + "\"}";
+    stream << "{\"d\":\"simple count = " + std::to_string(count) + "\"}";
 
     return stream.str();
 }
@@ -57,7 +68,7 @@ http::Response handle_request(const std::string& s) {
 
     header.set_field(http::header::Server, "IncludeOS/0.10");
 
-    res.add_body(calc_a_count(s));
+    res.add_body(service_handler(s));
     header.set_field(http::header::Content_Type, "text/html; charset=UTF-8");
     header.set_field(http::header::Content_Length, std::to_string(res.body().to_string().size()));
 
@@ -130,6 +141,8 @@ void Service::start(const std::string& s) {
 
     // Set up a TCP server on port 80
     auto& server = inet.tcp().bind(80);
+    
+
 
     // Add a TCP connection handler - here a hardcoded HTTP-service
     server.on_connect(
